@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ALX Entregas • Portal de Pagamentos</title>
+<link rel="icon" href="{{ logo_url }}" type="image/png">
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#0b0d10;color:#e6e6e6}
+.hero{background:linear-gradient(135deg,#0b0d10 0%,#0b0d10 50%,#0b1f33 100%);padding:32px 0;border-bottom:1px solid #1f2730}
+.hero .inner{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:0 16px}
+.hero img{height:96px;width:auto}
+.hero h1{font-size:26px;margin:0}
+.hero .actions{margin-left:auto;display:flex;align-items:center;gap:12px}
+.chip{background:#0d1117;border:1px solid #1f2730;border-radius:20px;padding:6px 12px;font-size:13px;color:#9aa4af}
+.logout{padding:8px 12px;border:0;border-radius:10px;background:#ff6b6b;color:#0b0d10;text-decoration:none}
+.wrap{max-width:960px;margin:24px auto;padding:0 16px}
+.card{background:#12161c;border:1px solid #1f2730;border-radius:14px;padding:18px;margin-bottom:18px}
+label{display:block;margin-bottom:8px}
+input[type=file]{display:none}
+.drop{border:1px dashed #2aa9ff;border-radius:14px;padding:24px;background:linear-gradient(180deg,#0b0d10 0,#0c1218 100%);text-align:center}
+.drop h2{margin:0 0 6px;font-size:16px}
+.drop p{margin:0;color:#9aa4af;font-size:12px}
+.drop .cta{margin-top:12px}
+.btn-primary{padding:12px 18px;border:0;border-radius:12px;background:linear-gradient(135deg,#2aa9ff 0%,#6bbcff 100%);color:#0b0d10;cursor:pointer;text-decoration:none;display:inline-block;font-weight:600}
+.btn-link{padding:10px 14px;border:1px solid #273042;border-radius:12px;background:#0b0d10;color:#e6e6e6;text-decoration:none;display:inline-block}
+button:hover,a.btn:hover{filter:brightness(1.05)}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px;border-bottom:1px solid #1f2730;font-size:14px}
+a{color:#2aa9ff;text-decoration:none}
+.muted{color:#9aa4af;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:740px){.grid{grid-template-columns:1fr}.hero .inner{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="inner">
+    <img src="{{ logo_url }}" alt="ALX Entregas">
+    <h1>ALX Entregas • Portal de Pagamentos</h1>
+    <div class="actions">
+      <div class="chip">Bem-vindo, {{ user }}</div>
+      <a class="logout" href="/logout">Sair</a>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="card">
+    <div class="grid">
+      <div>
+        <h1>Envio de arquivo</h1>
+        <form method="post" action="/upload" enctype="multipart/form-data" id="uploadForm">
+          <div class="drop" id="dropzone">
+            <h2>Arraste e solte seu arquivo aqui</h2>
+            <p>Excel (.xlsx) ou CSV</p>
+            <div class="cta">
+              <label class="btn-primary" for="fileInput">Selecionar arquivo</label>
+              <span id="fileName" class="muted" style="margin-left:10px"></span>
+            </div>
+            <input id="fileInput" type="file" name="file" accept=".xlsx,.csv" required>
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn-primary" type="submit">Enviar arquivo</button>
+            <span class="muted" style="margin-left:10px">Destino: {{ dest }}</span>
+          </div>
+        </form>
+        <div style="margin-top:16px">
+          <a class="btn-link" href="/process">Processar arquivo mais recente (PIX)</a>
+        </div>
+      </div>
+      <div>
+        <h1>Orientações</h1>
+        <div class="muted">
+          Aceita .xlsx e .csv<br>
+          O arquivo é salvo com timestamp na pasta de destino<br>
+          Use colunas id_pagamento, nome, documento, chave_pix, valor, descricao para PIX
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h1>Arquivos enviados</h1>
+    <table>
+      <thead>
+        <tr><th>Nome</th><th>Tamanho</th><th>Modificado</th><th>Ações</th></tr>
+      </thead>
+      <tbody>
+      {% for name, mtime, size in files %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ size|filesize }}</td>
+          <td>{{ mtime|datetime }}</td>
+          <td><a href="/download/{{ name }}">Baixar</a></td>
+        </tr>
+      {% endfor %}
+      {% if not files %}
+        <tr><td colspan="4" class="muted">Nenhum arquivo enviado</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<script>
+const dz = document.getElementById('dropzone');
+const input = document.getElementById('fileInput');
+const nameEl = document.getElementById('fileName');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='#6bbcff'; });
+dz.addEventListener('dragleave', e => { dz.style.borderColor='#2aa9ff'; });
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files && e.dataTransfer.files.length) {
+    input.files = e.dataTransfer.files;
+    nameEl.textContent = input.files[0].name;
+    dz.style.borderColor='#2aa9ff';
+  }
+});
+input.addEventListener('change', ()=> {
+  if (input.files && input.files.length) nameEl.textContent = input.files[0].name;
+});
+</script>
+</body>
+</html>
